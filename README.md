@@ -44,7 +44,7 @@ InfluxDB and Chronograf can be obtained here: [https://portal.influxdata.com/dow
 
 The tool was tested with InfluxDB v1.7.9.
 
-Logs are stored in an Influx DB measurememnt called "syslog" according to the
+Logs are stored in an Influx DB measurement called "syslog" according to the
 following schema (as required by the Chronograf viewer):
 
 Tags:
