@@ -309,7 +309,7 @@ public class SolaceLogCollector
 	{
 	    try
 	    {
-		// Add solace event to Influx, use the hostname field for host + VPN, and appname field for the event name.
+		//  Add solace event to Influx, use the host field for host + VPN, and hostname field for the event name (or otherway if swapHostCols enabled).
 
 		Point.Builder point = Point.measurement("syslog")
 		    .time(parser.getTimestamp().getTime(), TimeUnit.MILLISECONDS)
