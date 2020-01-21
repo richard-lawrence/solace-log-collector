@@ -67,7 +67,10 @@ Fields:
 No specific InfluxDB configuration is required, the tool creates a database called 'solace_log' and a default retention policy for 30 days. These can be overriden on the command line, however if you wish to use a different retention policy this must have been created using the InfluxDB command line tool.
  
 Chronograf has a built in log viewer that requires minimal configuration.
-Configure the log viewer, for example, as shown below. Note the host column is used for host/vpn, hostname column is used for the event name, and procid column is used for the event type.
+Configure the log viewer, for example, as shown below.
+Note the host column is used for host/vpn, hostname column is used for the event name, and procid column is used for the event type.
+Unfortunately, it's not currently possible to change the column widths in the Chronograf display, and the host column is wider than the hostname column, which means some longer event names are truncated. If you wish to swap the columns to give more room for the event name (but less for the Host/VPN) run the collector using the -swapHostCols option.
+
 
 ![Demo_Config](images/demo-config.png)
 
@@ -102,6 +105,9 @@ The collector supports the following command line options:
 	-tcpPort 	<port>			- The TCP port to listen on for syslog messages, 0 disabes TCP (default 0)
 	-maxSev  	<max severity>		- The max severity code to process, any greater severity (ie lower importance) is ignored (default 6 - info)
 	-all					- Process all syslogs collected, including non-solace events
+	-swapHostCols				- Swap Host and Hostname columns (use Hostname for Host/VPN, Host for Event Type)
+
+
 	-debug					- Enable debug trace
 ```
  
