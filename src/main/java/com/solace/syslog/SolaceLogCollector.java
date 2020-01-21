@@ -77,6 +77,7 @@ public class SolaceLogCollector
     protected boolean m_rpSet = false;
     protected InfluxDB m_db = null;
     protected boolean m_doAll = false;
+    protected boolean m_swapHostCols = false;
 
     public void usage()
     {
@@ -94,7 +95,8 @@ public class SolaceLogCollector
         System.out.println("  -tcpPort  <port>			- The TCP port to listen on for syslog messages, 0 disabes TCP (default 0)");
         System.out.println("  -maxSev  	<max severity>		- The max severity code to process, any greater severity (ie lower importance) is ignored (default 6 - info)");
         System.out.println("  -all				- Process all syslogs collected, including non-solace events");
-        System.out.println("  -debug				- Enable debug trace");
+        System.out.println("  -swapHostCols			- Swap Host and Hostname columns (use Hostname for Host/VPN, Host for Event Type)");
+	System.out.println("  -debug				- Enable debug trace");
         System.exit(0);
     }
 
@@ -311,9 +313,9 @@ public class SolaceLogCollector
 
 		Point.Builder point = Point.measurement("syslog")
 		    .time(parser.getTimestamp().getTime(), TimeUnit.MILLISECONDS)
-		    .tag("host", (parser.getSolaceVPN()!=null?host+"/"+parser.getSolaceVPN():host))
-		    .tag("hostname", (parser.getSolaceEventNameShort()!=null?parser.getSolaceEventNameShort():parser.getSolaceEventName()))
-		    .tag("severity", parser.getSeverity())
+		    .tag((m_swapHostCols?"hostname":"host"), (parser.getSolaceVPN()!=null?host+"/"+parser.getSolaceVPN():host))
+		    .tag((m_swapHostCols?"host":"hostname"), (parser.getSolaceEventNameShort()!=null?parser.getSolaceEventNameShort():parser.getSolaceEventName()))
+			    .tag("severity", parser.getSeverity())
 		    .tag("facility", parser.getFacility())
 		    .tag("appname", parser.getTag());
 
@@ -527,6 +529,12 @@ public class SolaceLogCollector
 		i += 1;
             }
             else
+            if (args[i].compareTo("-swapHostCols")==0)
+            {
+                m_swapHostCols = true;
+		i += 1;
+            }
+            else		    
             if (args[i].compareTo("-dbURL")==0)
             {
                 if ((i+1) >= args.length) usage();
