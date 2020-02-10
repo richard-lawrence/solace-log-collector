@@ -1,0 +1,769 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 12,
+  "iteration": 1581337970206,
+  "links": [],
+  "panels": [
+    {
+      "aliasColors": {
+        "Info": "blue",
+        "Notice": "dark-green",
+        "Warning": "orange",
+        "alert": "semi-dark-purple",
+        "critical": "semi-dark-purple",
+        "emergency": "semi-dark-purple",
+        "error": "semi-dark-red",
+        "info": "semi-dark-green",
+        "info/notice": "semi-dark-green",
+        "logs.count": "orange",
+        "notice": "semi-dark-green",
+        "warning": "semi-dark-yellow"
+      },
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasrc",
+      "decimals": 0,
+      "fill": 1,
+      "fillGradient": 3,
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 2,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": true,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 1,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "alias": "info",
+          "groupBy": [
+            {
+              "params": [
+                "5m"
+              ],
+              "type": "time"
+            }
+          ],
+          "measurement": "syslog",
+          "orderByTime": "ASC",
+          "policy": "policy30d",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE ( \"severity\" = 'info'  AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "message"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "count"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "severity",
+              "operator": "=",
+              "value": "info"
+            },
+            {
+              "condition": "AND",
+              "key": "host",
+              "operator": "=~",
+              "value": "/^$host$/"
+            },
+            {
+              "condition": "AND",
+              "key": "vpn",
+              "operator": "=~",
+              "value": "/^$vpn$/"
+            },
+            {
+              "condition": "AND",
+              "key": "eventName",
+              "operator": "=~",
+              "value": "/^$event$/"
+            },
+            {
+              "condition": "AND",
+              "key": "severity",
+              "operator": "=~",
+              "value": "/^$severity$/"
+            }
+          ]
+        },
+        {
+          "alias": "notice",
+          "groupBy": [
+            {
+              "params": [
+                "5m"
+              ],
+              "type": "time"
+            }
+          ],
+          "measurement": "syslog",
+          "orderByTime": "ASC",
+          "policy": "policy30d",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE (\"severity\" = 'notice' AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "message"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "count"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "severity",
+              "operator": "=",
+              "value": "error"
+            },
+            {
+              "condition": "AND",
+              "key": "host",
+              "operator": "=~",
+              "value": "/^$host$/"
+            },
+            {
+              "condition": "AND",
+              "key": "vpn",
+              "operator": "=~",
+              "value": "/^$vpn$/"
+            },
+            {
+              "condition": "AND",
+              "key": "eventName",
+              "operator": "=~",
+              "value": "/^$event$/"
+            }
+          ]
+        },
+        {
+          "alias": "warning",
+          "groupBy": [
+            {
+              "params": [
+                "5m"
+              ],
+              "type": "time"
+            }
+          ],
+          "measurement": "syslog",
+          "orderByTime": "ASC",
+          "policy": "policy30d",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE (\"severity\" = 'warning' AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "message"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "count"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "severity",
+              "operator": "=",
+              "value": "warning"
+            },
+            {
+              "condition": "AND",
+              "key": "host",
+              "operator": "=~",
+              "value": "/^$host$/"
+            },
+            {
+              "condition": "AND",
+              "key": "vpn",
+              "operator": "=~",
+              "value": "/^$vpn$/"
+            },
+            {
+              "condition": "AND",
+              "key": "eventName",
+              "operator": "=~",
+              "value": "/^$event$/"
+            }
+          ]
+        },
+        {
+          "alias": "error",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE (\"severity\" = 'error' AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "D",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "critical",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE (\"severity\" = 'crit' AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "E",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "alert",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE (\"severity\" = 'alert' AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "F",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "emergency",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT count(\"message\") FROM \"policy30d\".\"syslog\" WHERE (\"severity\" = 'emerg' AND \"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventType\" =~ /^$type$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/) AND $timeFilter GROUP BY time(5m)",
+          "rawQuery": true,
+          "refId": "G",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "datasource": "$datasrc",
+      "gridPos": {
+        "h": 17,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 4,
+      "options": {
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "groupBy": [],
+          "measurement": "syslog",
+          "orderByTime": "ASC",
+          "policy": "policy30d",
+          "query": "SELECT \"message\" FROM \"policy30d\".\"syslog\" WHERE (\"host\" =~ /^$host$/ AND \"vpn\" =~ /^$vpn$/ AND \"eventName\" =~ /^$event$/ AND \"severity\" =~ /^$severity$/ AND \"eventType\" =~ /^$type$/) AND $timeFilter ORDER BY time DESC LIMIT $limit",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "table",
+          "select": [
+            [
+              {
+                "params": [
+                  "message"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "host",
+              "operator": "=~",
+              "value": "/^$host$/"
+            },
+            {
+              "condition": "AND",
+              "key": "vpn",
+              "operator": "=~",
+              "value": "/^$vpn$/"
+            },
+            {
+              "condition": "AND",
+              "key": "eventName",
+              "operator": "=~",
+              "value": "/^$event$/"
+            },
+            {
+              "condition": "AND",
+              "key": "severity",
+              "operator": "=~",
+              "value": "/^$severity$/"
+            },
+            {
+              "condition": "AND",
+              "key": "eventType",
+              "operator": "=~",
+              "value": "/^$type$/"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Syslog Messages",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 22,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "InfluxDB",
+          "value": "InfluxDB"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "DataSrc",
+        "multi": false,
+        "name": "datasrc",
+        "options": [],
+        "query": "influxdb",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "$datasrc",
+        "definition": " show tag values from policy30d.syslog with key =\"host\" ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Host",
+        "multi": true,
+        "name": "host",
+        "options": [],
+        "query": " show tag values from policy30d.syslog with key =\"host\" ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "$datasrc",
+        "definition": " show tag values from policy30d.syslog with key =\"vpn\" ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "VPN",
+        "multi": true,
+        "name": "vpn",
+        "options": [],
+        "query": " show tag values from policy30d.syslog with key =\"vpn\" ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Type",
+        "multi": true,
+        "name": "type",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "SYSTEM",
+            "value": "SYSTEM"
+          },
+          {
+            "selected": false,
+            "text": "VPN",
+            "value": "VPN"
+          },
+          {
+            "selected": false,
+            "text": "CLIENT",
+            "value": "CLIENT"
+          }
+        ],
+        "query": "SYSTEM,VPN,CLIENT",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "$datasrc",
+        "definition": " show tag values from policy30d.syslog with key =\"eventName\" ",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Event",
+        "multi": true,
+        "name": "event",
+        "options": [],
+        "query": " show tag values from policy30d.syslog with key =\"eventName\" ",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "show tag values from syslog with key =\"eventName\" where eventType='$tag'",
+        "tags": [],
+        "tagsQuery": " show tag values from syslog with key =\"eventType\" ",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Severity",
+        "multi": true,
+        "name": "severity",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "info",
+            "value": "info"
+          },
+          {
+            "selected": false,
+            "text": "notice",
+            "value": "notice"
+          },
+          {
+            "selected": false,
+            "text": "warning",
+            "value": "warning"
+          },
+          {
+            "selected": false,
+            "text": "error",
+            "value": "error"
+          },
+          {
+            "selected": false,
+            "text": "crit",
+            "value": "crit"
+          },
+          {
+            "selected": false,
+            "text": "alert",
+            "value": "alert"
+          },
+          {
+            "selected": false,
+            "text": "emerg",
+            "value": "emerg"
+          }
+        ],
+        "query": "info,notice,warning,error,crit,alert,emerg",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "1000",
+          "value": "1000"
+        },
+        "hide": 2,
+        "label": null,
+        "name": "limit",
+        "options": [
+          {
+            "selected": true,
+            "text": "1000",
+            "value": "1000"
+          }
+        ],
+        "query": "1000",
+        "skipUrlSync": false,
+        "type": "constant"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "Solace Log Dashboard",
+  "uid": "-PRKKtUWk",
+  "version": 18
+}
