@@ -2,4 +2,4 @@
 
 CLASSPATH=./target/syslog-1.0.jar:./target/dependency/*
 
-sudo java -cp $CLASSPATH  com.solace.syslog.SolaceLogCollector -username admin -password admin -dbURL http://localhost:8086 -addr 0.0.0.0 -all -tcpPort 514
+sudo java -cp $CLASSPATH  com.solace.syslog.SolaceLogCollectorInflux -username admin -password admin -dbURL http://localhost:8086 -addr 0.0.0.0 -all -tcpPort 514
