@@ -35,6 +35,8 @@ public class SyslogParser
 {
 
     protected String m_msg = null;
+    protected String m_longMsg = null;
+    protected String m_solaceMsg = null;
     protected String m_tag = null;
     protected int m_sevCode = -1;
     protected int m_priority = -1;
@@ -59,6 +61,8 @@ public class SyslogParser
     {
 	// These fields may be accessed bu the caller after a successful parse
         m_msg = null;
+        m_longMsg = null;
+        m_solaceMsg = null;
 	m_tag = null;
 	m_pinfo = null;
         m_sevCode = -1;
@@ -86,6 +90,8 @@ public class SyslogParser
 
 	expect(' ');
 	skipSpaces();
+
+	m_longMsg = peekLine();
 
 	// NOTE some messages do not contain hostname, so check for tag first
 	if (!peekWord().contains(":"))
@@ -120,6 +126,9 @@ public class SyslogParser
 
 	    expect(':');
 	    skipSpaces();
+
+	    // include event name in solace message
+	    m_solaceMsg = peekLine();
 
 	    m_eventName = readTag();
 	    if (m_eventName.startsWith(m_eventType))
@@ -528,6 +537,12 @@ public class SyslogParser
 	return s;
     }
     
+    protected String peekLine() 
+    {
+	String s = m_line.substring(m_index);
+	return s;
+    }
+ 
     public int getFacilityCode() 
     {
 	if (m_priority >= 0)
@@ -591,7 +606,7 @@ public class SyslogParser
 	    case 0:	return "emerg";
 	    case 1:	return "alert";
 	    case 2: 	return "crit";
-	    case 3: 	return "err";
+	    case 3: 	return "error";
 	    case 4:	return "warning";
 	    case 5:	return "notice";
 	    case 6:	return "info"; 
@@ -661,6 +676,14 @@ public class SyslogParser
     public String getMsg() 
     {
         return m_msg;
+    }
+    public String getLongMsg() 
+    {
+        return m_longMsg;
+    }
+    public String getSolaceMsg() 
+    {
+        return m_solaceMsg;
     }
     public String getSolaceEventType() 
     {

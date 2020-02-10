@@ -3,35 +3,18 @@
  *
  * @author rlawrence
  *
- * This tool collects syslog messages from any solace broker stores them in
- * InfluxDB for visualisation with Chronograf
- *
- * The Chronograf log viewer expects an Influx measurememnt called "syslog" according to the
- * following schema:
- *
- * Tags:
- * 	severity
- * 	host	 - used for host/vpn
- *	hostname - used for the solace event name
- *	appname  - used for the solace event tag
- * 	facility 
- *
- * Fields:
- * 	timestamp
- * 	message
- * 	facility_code
- *	severity_code
- *	procid   - used for the solace event type
+ * This class collects and parses syslog messages from solace message brokers.
+ * The collector receives syslog messages directly from the network and supports both UDP and TCP.
+ * Note: Running with root permission may be required to bind to the default UDP port.
+
+ * A subclass is responsible for storing the messages to an appropriate database for visualisation.
  *	
  */
 
 package com.solace.syslog;
 
-import java.util.Vector;
 import java.util.Date;
 import java.text.SimpleDateFormat;
-import java.util.concurrent.TimeUnit;
-
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -45,13 +28,7 @@ import java.net.UnknownHostException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
-import org.influxdb.InfluxDBIOException;
-import org.influxdb.dto.*;
-import org.influxdb.impl.InfluxDBResultMapper;
-
-public class SolaceLogCollector
+public abstract class SolaceLogCollector
 {
 
     protected 	SimpleDateFormat m_dateFormat = 
@@ -69,40 +46,30 @@ public class SolaceLogCollector
     protected ServerSocket m_tcpSocket = null;
     protected boolean m_debug = false;
  
-    protected String m_dbURL = "http://localhost:8086";
-    protected String m_username = "admin";
-    protected String m_password = "admin";
-    protected String m_dbName  =  "solace_log";
-    protected String m_rpName  =  "policy30d";
-    protected boolean m_rpSet = false;
-    protected InfluxDB m_db = null;
     protected boolean m_doAll = false;
-    protected boolean m_swapHostCols = false;
 
-    public void usage()
+    public void usage(String header, boolean doExit)
     {
-        System.out.println("\nUsage: java SolaceLogCollector [options]");
+	System.out.println(header);
 	System.out.println("");
-        System.out.println("   where options are:");
+        System.out.println("  where options are:");
         System.out.println("");
-        System.out.println("  -dbURL    <DB URL>		- Infux DB URL (default http://localhost:8086)");
-        System.out.println("  -username <Username>		- Influx DB usnername (default admin)");
-        System.out.println("  -password	<Password>		- Influx DB password (default admin)");
-        System.out.println("  -dbName   <DB Name>		- Influx DB name (default solace_log)");
-        System.out.println("  -rpName 	<retention policy> 	- Influx DB retention policy name (if not set creates a policy called policy30d - 30 days)");
-        System.out.println("  -addr   	<interface>		- The local interface to bind to receive syslogs (default localhost)");
-        System.out.println("  -udpPort  <port>			- The UDP port to listen on for syslog messages, 0 disabes UDP (default 514)");
-        System.out.println("  -tcpPort  <port>			- The TCP port to listen on for syslog messages, 0 disabes TCP (default 0)");
-        System.out.println("  -maxSev  	<max severity>		- The max severity code to process, any greater severity (ie lower importance) is ignored (default 6 - info)");
-        System.out.println("  -all				- Process all syslogs collected, including non-solace events");
-        System.out.println("  -swapHostCols			- Swap Host and Hostname columns (use Hostname for Host/VPN, Host for Event Type)");
-	System.out.println("  -debug				- Enable debug trace");
-        System.exit(0);
+        System.out.println("  -addr     <interface>             - The local interface to bind to receive syslogs (default localhost)");
+        System.out.println("  -udpPor   <port>                  - The UDP port to listen on for syslog messages, 0 disables UDP (default 514)");
+        System.out.println("  -tcpPort  <port>                  - The TCP port to listen on for syslog messages, 0 disables TCP (default 0)");
+        System.out.println("  -maxSev   <max severity>          - The max severity code to process, any greater severity (ie lower importance) is ignored (default 6 - info)");
+        System.out.println("  -all                              - Process all syslogs collected, including non-solace events");
+        System.out.println("  -debug                            - Enable debug trace");
+	if (doExit)
+	    System.exit(0);
     }
 
-    public SolaceLogCollector()
-    {
-    }
+    public abstract void newSolaceLogEvent(SyslogParser parser, String host);
+
+    public abstract void newPlainLogEvent(SyslogParser parser, String host);
+
+    public abstract void usage();
+ 
 
     public void init()
     {
@@ -141,61 +108,7 @@ public class SolaceLogCollector
 	    {
 		traceError("init: Exception: "+e.toString());
 	    }
-
-	    // Init InfluxDB
-	    try
-	    {
-		m_db =  InfluxDBFactory.connect(m_dbURL, m_username, m_password);
-
-		if (m_db == null)
-		{
-		    traceError("init: Failed to connect to Influx DB: "+m_dbURL);
-		}
-
-		try
-		{
-		    Pong response = m_db.ping();
-		    if (response.getVersion().equalsIgnoreCase("unknown"))
-		    {
-			traceError("init: Failed to ping Influx DB server at: "+m_dbURL);
-		    } else {
-			traceInfo("init: Connected to InfluxDB: "+m_dbURL+" version "+response.getVersion());
-		    }
-		}
-		catch (InfluxDBIOException idbo)
-		{
-		    traceError("init: Failed to connect to Influx DB: "+idbo);
-		}
-
-		if (!m_db.databaseExists(m_dbName))
-		{
-		    traceInfo("init: Influx DB "+m_dbName+" does not exist, attempting to create it");
-		    m_db.createDatabase(m_dbName);		// May fail on older Influx versions
-		}
-
-		// Need a retention policy if not preset on command line
-		if (!m_rpSet)
-		{
-		    traceInfo("init: Influx rentention policy not set, creating a policy for 30days");
-		    m_db.createRetentionPolicy(m_rpName, m_dbName, "30d", 1, true);
-		}
-		else
-		{
-		    traceInfo("init: Influx retention policy set as: "+m_rpName+" this must exist");
-		}
-
-		if (m_doAll)
-		    traceInfo("init: Pushing All syslogs to Influx DB: "+m_dbName+" at: "+m_dbURL);
-		else
-		    traceInfo("init: Pushing Solace syslogs to Influx DB: "+m_dbName+" at: "+m_dbURL);
-
-	    }
-	    catch(Exception ie)
-	    {
-		traceError("init: Failed to create Influx client: "+ie.getMessage());
-	    }
 	}
- 
     }
 
     public synchronized void start()
@@ -231,20 +144,6 @@ public class SolaceLogCollector
 	m_acceptThread = null;
     }
 
-    public static void main(String[] args) {
-        SolaceLogCollector cs = new SolaceLogCollector();
-	try
-	{
-	    cs.parseModuleArgs(args);
-	    cs.init();
-	    cs.start();
-	}
-	catch(Exception ie)
-	{
-	    cs.traceError("Main: Exception: "+ie.getMessage());
-	}
-    }
-
     public void processNewSyslog(SyslogParser parser, String line, String hostAddress)
     {
 	try
@@ -274,12 +173,12 @@ public class SolaceLogCollector
 
 	    if (parser.getSolaceEventType() != null)
 	    {
-		pushSolaceEventToInflux(parser, host);
+		newSolaceLogEvent(parser, host);
 		return;
 	    }
 	    else if (m_doAll)
 	    {
-		pushPlainEventToInflux(parser, host);
+		newPlainLogEvent(parser, host);
 		return;
 	    }
 	    else
@@ -303,78 +202,6 @@ public class SolaceLogCollector
 	}
     }
 
-    public void pushSolaceEventToInflux(SyslogParser parser, String host)
-    {
-	if (m_db != null)
-	{
-	    try
-	    {
-		//  Add solace event to Influx, use the host field for host + VPN, and hostname field for the event name (or otherway if swapHostCols enabled).
-
-		Point.Builder point = Point.measurement("syslog")
-		    .time(parser.getTimestamp().getTime(), TimeUnit.MILLISECONDS)
-		    .tag((m_swapHostCols?"hostname":"host"), (parser.getSolaceVPN()!=null?host+"/"+parser.getSolaceVPN():host))
-		    .tag((m_swapHostCols?"host":"hostname"), (parser.getSolaceEventNameShort()!=null?parser.getSolaceEventNameShort():parser.getSolaceEventName()))
-			    .tag("severity", parser.getSeverity())
-		    .tag("facility", parser.getFacility())
-		    .tag("appname", parser.getTag());
-
-		point.addField("timestamp", parser.getTimestamp().getTime()*1000000); // Influx timestamps are in nanos
-		point.addField("message", parser.getMsg());
-		point.addField("severity_code", parser.getSeverityCode());
-		point.addField("facility_code", parser.getFacilityCode());
-		point.addField("procid", parser.getSolaceEventType());
-
-		// Influx should be thread safe!
-		m_db.write(m_dbName, m_rpName, point.build());
-
-		traceDebug("pushSolaceEventToInflux: "+m_dateFormat.format(parser.getTimestamp())+" host:"+host+" tag:"+parser.getTag()+" sev:"+parser.getSeverity()+" event:"+parser.getSolaceEventName()+" msg:"+parser.getMsg());
-	    }
-	    catch(Exception ie)
-	    {
-		traceWarning("pushSolaceEventToInflux: Failed to push event to Influx: "+ie.toString());
-		traceWarning("pushSolaceEventToInflux: "+m_dateFormat.format(parser.getTimestamp())+" host:"+host+" sev:"+parser.getSeverity()+" event:"+parser.getSolaceEventName()+" msg:"+parser.getMsg());
-		traceWarning("------------------");
-	    }
-	}
-    }
-
-    public void pushPlainEventToInflux(SyslogParser parser, String host)
-    {
-	if (m_db != null)
-	{
-	    try
-	    {
-		// Add plain (non-solace) event to Influx
-
-		Point.Builder point = Point.measurement("syslog")
-		    .time(parser.getTimestamp().getTime(), TimeUnit.MILLISECONDS)
-		    .tag("hostname", host)
-		    .tag("host", host)
-		    .tag("severity", parser.getSeverity())
-		    .tag("facility", parser.getFacility())
-		    .tag("appname", parser.getTag());
-
-		point.addField("timestamp", parser.getTimestamp().getTime()*1000000); // Influx timestamps are in nanos
-		point.addField("message", parser.getMsg());
-		point.addField("severity_code", parser.getSeverityCode());
-		point.addField("facility_code", parser.getFacilityCode());
-		if (parser.getProcInfo() != null)
-		    point.addField("procid", parser.getProcInfo());
-
-		// Influx should be thread safe!
-		m_db.write(m_dbName, m_rpName, point.build());
-
-		traceDebug("pushPlainEventToInflux: "+m_dateFormat.format(parser.getTimestamp())+" host:"+host+" tag:"+parser.getTag()+" sev:"+parser.getSeverity()+" msg:"+parser.getMsg());
-	    }
-	    catch(Exception ie)
-	    {
-		traceWarning("pushPlainEventToInflux: Failed to push event to Influx: "+ie.getMessage());
-		traceWarning("pushPlainEventToInflux: "+m_dateFormat.format(parser.getTimestamp())+" host:"+host+" sev:"+parser.getSeverity()+" msg:"+parser.getMsg());
-		traceWarning("------------------");
-	    }
-	}
-    }
     class UdpReaderThread extends Thread 
     {
 
@@ -394,7 +221,7 @@ public class SolaceLogCollector
 
 		traceDebug("UdpReaderThread: syslog reader thread running..");
 
-		/* recv messages */
+		// recv messages
 		while (true)
 		{
 		    try
@@ -431,7 +258,7 @@ public class SolaceLogCollector
 
 		traceDebug("TcpAcceptThread: syslog tcp accept thread running..");
 
-		/* recv connections */
+		// recv connections
 		while (true)
 		{
 		    try
@@ -470,7 +297,7 @@ public class SolaceLogCollector
 
 		    traceDebug("TcpReaderThread: syslog tcp reader thread running for host "+socket.getInetAddress().getHostAddress());
 
-		    /* recv messages */
+		    // recv messages
 		    while (true)
 		    {
 			// Receive the next tcp message
@@ -497,7 +324,7 @@ public class SolaceLogCollector
 	    }
     	}
     }
-    private int convertStringToInt(String value)
+    public int convertStringToInt(String value)
     {
         if(value != null && !value.equals(""))
 	try
@@ -513,69 +340,39 @@ public class SolaceLogCollector
 
     public void parseModuleArgs(String[] args)
     {
-	int i=0;
+	for (int i = 0; i < args.length; i++)
+        {
+	    int inc = parseModuleArg(args, i);
 
-        while(i < args.length)
+	    if (inc < 0)
+		usage();
+	    else
+		i += inc;
+	}
+ 
+    }
+    public int parseModuleArg(String[] args, int i)
+    {
+
+	if (i < args.length)
         {
             if (args[i].compareTo("-all")==0)
             {
                 m_doAll = true;
-		i += 1;
+		return 0;
             }
             else
             if (args[i].compareTo("-debug")==0)
             {
                 m_debug = true;
-		i += 1;
-            }
-            else
-            if (args[i].compareTo("-swapHostCols")==0)
-            {
-                m_swapHostCols = true;
-		i += 1;
-            }
-            else		    
-            if (args[i].compareTo("-dbURL")==0)
-            {
-                if ((i+1) >= args.length) usage();
-                m_dbURL = args[i+1];
-		i += 2;
-            }
-            else
-            if (args[i].compareTo("-dbName")==0)
-            {
-                if ((i+1) >= args.length) usage();
-                m_dbName = args[i+1];
-		i += 2;
-            }
-            else
-            if (args[i].compareTo("-username")==0)
-            {
-                if ((i+1) >= args.length) usage();
-                m_username = args[i+1];
-		i += 2;
-            }
-            else
-            if (args[i].compareTo("-password")==0)
-            {
-                if ((i+1) >= args.length) usage();
-                m_password = args[i+1];
-		i += 2;
-            }
-            else
-            if (args[i].compareTo("-rpName")==0)
-            {
-                if ((i+1) >= args.length) usage();
-                m_rpName = args[i+1];
-		m_rpSet = true;
-		i += 2;
+		return 0;
             }
             else
             if (args[i].compareTo("-addr")==0)
             {
                 if ((i+1) >= args.length) usage();
                 m_addr = args[i+1];
-		i += 2;
+		return 1;
             }
             else
             if (args[i].compareTo("-udpPort")==0)
@@ -586,7 +383,7 @@ public class SolaceLogCollector
 		    m_udpPort = p;
 		else
 		    traceWarning("parseModuleArgs: Invalid UDP port specified: "+args[i+1]+" using: "+m_udpPort);
-		i += 2;
+		return 1;
             }
             else
             if (args[i].compareTo("-tcpPort")==0)
@@ -597,7 +394,7 @@ public class SolaceLogCollector
 		    m_tcpPort = p;
 		else
 		    traceWarning("parseModuleArgs: Invalid TCP port specified: "+args[i+1]+" using: "+m_tcpPort);
-		i += 2;
+		return 1;
             }
             else
             if (args[i].compareTo("-maxSev")==0)
@@ -608,13 +405,10 @@ public class SolaceLogCollector
 		    m_maxSeverity = s;
 		else
 		    traceWarning("parseModuleArgs: Invalid maxSev: "+args[i+1]+" using: "+m_maxSeverity);
-		i += 2;
-            }
-	    else
-            {
-                usage();
+		return 1;
             }
         }
+	return -1;
     }
     public void traceError(String s)
     {
